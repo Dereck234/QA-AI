@@ -1,34 +1,118 @@
-from dotenv import load_dotenv
-from google import genai
+import json
+import urllib.request
+import string
 
 
-def build_prompt(question):
+def build_prompt(question, chunks):
+    context = "\n\n".join(chunks)
+
     return f"""
-Answer the user's question clearly and concisely.
+Answer the user's question using only the provided context.
+
+Context:
+{context}
 
 Question:
 {question}
 """
 
 
-load_dotenv()
+def generate_answer(prompt):
+    url = "http://localhost:11434/api/generate"
 
-client = genai.Client()
+    data = {
+        "model": "qwen3:8b",
+        "prompt": prompt,
+        "stream": False,
+    }
 
-question = input("Question: ")
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(data).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
 
-prompt = build_prompt(question)
+    with urllib.request.urlopen(request) as response:
+        result = json.loads(response.read().decode("utf-8"))
 
-print("\n--- PROMPT SENT TO MODEL ---")
-print(prompt)
+    return result["response"]
 
-response = client.models.generate_content(
-    model="gemini-3.5-flash",
-    contents=prompt,
-)
+STOP_WORDS = {
+    "a",
+    "an",
+    "the",
+    "is",
+    "are",
+    "what",
+    "does",
+    "do",
+    "how",
+    "why",
+    "when",
+    "where",
+    "to",
+    "of",
+    "in",
+    "on",
+}
 
-print("Answer:", response.text)
-print("Model:", response.model_version)
-print("Prompt tokens:", response.usage_metadata.prompt_token_count)
-print("Output tokens:", response.usage_metadata.candidates_token_count)
-print("Total tokens:", response.usage_metadata.total_token_count)
+def score_chunk(question, chunk):
+    question_words = question.lower().split()
+    chunk_words = chunk.lower().split()
+
+    question_words = [
+        word.strip(string.punctuation)
+        for word in question_words
+    ]
+
+    chunk_words = [
+        word.strip(string.punctuation)
+        for word in chunk_words
+    ]
+
+    score = 0
+
+    for word in question_words:
+        if word in STOP_WORDS:
+            continue
+
+        if word in chunk_words:
+            score += 1
+
+    return score
+
+def retrieve_chunks(question, chunks, top_k=2):
+    scored_chunks = []
+
+    for chunk in chunks:
+        score = score_chunk(question, chunk)
+        scored_chunks.append((score, chunk))
+
+    scored_chunks.sort(reverse=True)
+
+    return scored_chunks[:top_k]
+
+with open("documents/networking.txt", "r", encoding="utf-8") as file:
+    document = file.read()
+
+chunks = document.split("\n\n")
+
+question = "What does UDP provide?"
+
+results = retrieve_chunks(question, chunks, top_k=2)
+
+retrieved_chunks = [chunk for score, chunk in results]
+
+prompt = build_prompt(question, retrieved_chunks)
+
+print("\n--- RETRIEVED CONTEXT ---")
+
+for score, chunk in results:
+    print(f"\nScore: {score}")
+    print(chunk)
+
+answer = generate_answer(prompt)
+
+print("\n--- ANSWER ---")
+print(answer)
