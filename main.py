@@ -3,6 +3,26 @@ import urllib.request
 import string
 
 
+STOP_WORDS = {
+    "a",
+    "an",
+    "the",
+    "is",
+    "are",
+    "what",
+    "does",
+    "do",
+    "how",
+    "why",
+    "when",
+    "where",
+    "to",
+    "of",
+    "in",
+    "on",
+}
+
+
 def build_prompt(question, chunks):
     context = "\n\n".join(chunks)
 
@@ -14,6 +34,8 @@ Context:
 
 Question:
 {question}
+
+Answer:
 """
 
 
@@ -38,24 +60,6 @@ def generate_answer(prompt):
 
     return result["response"]
 
-STOP_WORDS = {
-    "a",
-    "an",
-    "the",
-    "is",
-    "are",
-    "what",
-    "does",
-    "do",
-    "how",
-    "why",
-    "when",
-    "where",
-    "to",
-    "of",
-    "in",
-    "on",
-}
 
 def score_chunk(question, chunk):
     question_words = question.lower().split()
@@ -82,25 +86,26 @@ def score_chunk(question, chunk):
 
     return score
 
-def retrieve_chunks(question, chunks, top_k=2):
-    scored_chunks = []
-
-    for chunk in chunks:
-        score = score_chunk(question, chunk)
-        scored_chunks.append((score, chunk))
-
-    scored_chunks.sort(reverse=True)
-
-    return scored_chunks[:top_k]
 
 with open("documents/networking.txt", "r", encoding="utf-8") as file:
     document = file.read()
 
 chunks = document.split("\n\n")
 
-question = "What does UDP provide?"
 
-results = retrieve_chunks(question, chunks, top_k=2)
+question = input("Question: ")
+
+results = []
+
+for chunk in chunks:
+    score = score_chunk(question, chunk)
+    results.append((score, chunk))
+
+# Most relevant chunks first
+results.sort(key=lambda x: x[0], reverse=True)
+
+# Keep only the 5 best chunks
+results = results[:5]
 
 retrieved_chunks = [chunk for score, chunk in results]
 
