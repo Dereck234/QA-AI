@@ -9,8 +9,10 @@ chunks = criar_chunks(docs[0])
 print(f"Arquivo: {docs[0]}")
 print(f"Quantidade de chunks: {len(chunks)}")
 
-for chunk in chunks[:10]:
-    print("\n--- CHUNK ---")
+for chunk in chunks[:5]:
+    print("\n" + "=" * 60)
     print(f"Position: {chunk['position']}")
     print(f"Section: {chunk['section']}")
-    print(f"Text: {chunk['text'][:150]}")
+    print(f"Tamanho: {len(chunk['text'])} caracteres")
+    print("-" * 60)
+    print(chunk["text"])
