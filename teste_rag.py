@@ -5,7 +5,7 @@ from generator import gerar_resposta
 
 indice = carregar_indice()
 
-pergunta = "What is the capital of Brazil?"
+pergunta = "How do I make asynchronous HTTP requests?"
 
 resultados = buscar(
     pergunta,
