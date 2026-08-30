@@ -5,7 +5,11 @@ from generator import gerar_resposta
 
 indice = carregar_indice()
 
-pergunta = "How do I make asynchronous HTTP requests?"
+pergunta = input("Digite sua pergunta: ")
+
+if not pergunta.strip():
+    print("Por favor, digite uma pergunta.")
+    exit()
 
 resultados = buscar(
     pergunta,

@@ -17,6 +17,9 @@ def cosine_similarity(vetor_a, vetor_b):
 
 
 def buscar(pergunta, indice, get_embedding, top_k=3, threshold=0.60):
+    if top_k <= 0:
+        raise ValueError("top_k deve ser maior que zero.")
+
     pergunta_embedding = get_embedding(pergunta)
 
     resultados = []

@@ -7,6 +7,10 @@ from embeddings import get_embedding
 def criar_indice():
     docs = list(Path("arquivos-md").rglob("*.md"))
 
+    if not docs:
+        print("Nenhum documento encontrado em arquivos-md.")
+        return [], []
+
     chunks = []
 
     for doc in docs:
